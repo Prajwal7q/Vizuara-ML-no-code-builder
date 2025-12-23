@@ -1,0 +1,203 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vizuara No-Code ML Pipeline</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <img src="https://www.vizuara.com/favicon.ico" alt="Vizuara" width="30" height="30" class="me-2">
+                Vizuara ML Pipeline
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link active" href="/">Builder</a>
+                <a class="nav-link" href="/about">About</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Hero Header -->
+                <div class="text-center mb-5">
+                    <h1 class="display-4 fw-bold mb-3">🚀 No-Code ML Pipeline Builder</h1>
+                    <p class="lead text-muted mb-4">Built by <a href="https://www.vizuara.com/" target="_blank" class="text-decoration-none fw-bold">Vizuara AI</a></p>
+                </div>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Recent Runs -->
+                {% if recent_runs %}
+                <div class="card mb-5 shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Pipelines</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for run in recent_runs %}
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <div>
+                                <small class="text-muted">{{ run.pipeline.dataset.filename }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success fs-6">{{ "%.1f"|format(run.accuracy*100) }}%</span>
+                                <a href="/results/{{ run.id }}" class="btn btn-sm btn-outline-primary ms-2">View</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if not dataset %}
+                <!-- STEP 1: Upload -->
+                <div class="card shadow-lg border-0 mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-file-upload me-2"></i>Step 1: Upload Dataset</h5>
+                    </div>
+                    <div class="card-body p-5">
+                        <form method="POST" action="/upload" enctype="multipart/form-data">
+                            <div class="mb-4">
+                                <label class="form-label fw-bold fs-5">Upload CSV or Excel file</label>
+                                <div class="text-muted mb-3">Supports datasets up to 10,000+ rows</div>
+                                <input type="file" class="form-control form-control-lg" name="dataset" accept=".csv,.xlsx,.xls" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="fas fa-rocket me-2"></i>Analyze Dataset
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Dataset Success -->
+                <div class="alert alert-success border-0 shadow-sm mb-5">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle fa-2x text-success me-3"></i>
+                        <div>
+                            <h5>✅ Dataset Loaded Successfully!</h5>
+                            <p class="mb-2">{{ dataset.filename }} • {{ dataset.n_rows}} rows • {{ dataset.n_cols }} columns</p>
+                            <small class="text-muted">Target column selection and pipeline configuration below</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pipeline Configuration Form -->
+                <form method="POST" action="/configure">
+                    <input type="hidden" name="dataset_id" value="{{ dataset.id }}">
+
+                    <!-- STEP 2: Preprocessing -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>Step 2: Data Preprocessing</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch form-check-lg">
+                                        <input class="form-check-input" type="checkbox" name="standardization" id="standard">
+                                        <label class="form-check-label fs-5" for="standard">
+                                            <i class="fas fa-balance-scale me-2 text-primary"></i>Standardization
+                                            <div class="form-text">StandardScaler: zero mean, unit variance</div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch form-check-lg">
+                                        <input class="form-check-input" type="checkbox" name="normalization" id="normalize">
+                                        <label class="form-check-label fs-5" for="normalize">
+                                            <i class="fas fa-compress-arrows-alt me-2 text-success"></i>Normalization
+                                            <div class="form-text">MinMaxScaler: 0 to 1 range</div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: Train-Test Split -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-warning text-white">
+                            <h5 class="mb-0"><i class="fas fa-cut me-2"></i>Step 3: Train-Test Split</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <select name="split_ratio" class="form-select form-select-lg">
+                                        <option value="0.2" selected>80-20 (Train:Test) <span class="badge bg-success">Recommended</span></option>
+                                        <option value="0.3">70-30</option>
+                                        <option value="0.25">75-25</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 4: Model Configuration -->
+                    <div class="card shadow-sm mb-5">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-brain me-2"></i>Step 4: Model & Target</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold fs-5">Target Column</label>
+                                    <select name="target_column" class="form-select form-select-lg" required>
+                                        {% for col in columns %}
+                                            <option value="{{ col }}">{{ col }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">Auto-binarizes continuous targets (above median = 1)</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold fs-5">Model</label>
+                                    <select name="model_type" class="form-select form-select-lg" required>
+                                        <option value="logistic_regression">Logistic Regression</option>
+                                        <option value="decision_tree">Decision Tree Classifier</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RUN BUTTON -->
+                    <div class="text-center mb-5">
+                        <button type="submit" class="btn btn-success btn-lg px-5 py-3 shadow-lg">
+                            <i class="fas fa-rocket me-3"></i>
+                            <span class="fs-4 fw-bold">🚀 Run ML Pipeline</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Sample Data -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0"><i class="fas fa-table me-2"></i>Sample Data Preview</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        {{ sample|safe }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

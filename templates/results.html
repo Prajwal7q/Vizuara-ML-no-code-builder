@@ -1,0 +1,42 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ML Pipeline Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h1 class="text-center mb-4">✅ Pipeline Complete!</h1>
+            
+            <div class="card border-success mb-4 shadow">
+                <div class="card-body text-center p-5">
+                    <h2 class="text-success display-4 mb-3">Accuracy: {{ "%.1f"|format(run.accuracy*100) }}%</h2>
+                    <p class="lead">Status: <span class="badge bg-success fs-5 px-3 py-2">{{ run.status }}</span></p>
+                    <small class="text-muted">Dataset: {{ run.pipeline.dataset.filename }}</small>
+                </div>
+            </div>
+
+            {% if run.chart_path %}
+            <div class="card mb-4 shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5>📈 Confusion Matrix</h5>
+                </div>
+                <div class="card-body text-center p-4">
+                    <img src="{{ url_for('static', filename=run.chart_path.split('/')[-1]) }}" class="img-fluid rounded shadow" alt="Confusion Matrix" style="max-height: 500px;">
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="text-center">
+                <a href="/" class="btn btn-primary btn-lg me-3">🔄 New Pipeline</a>
+                <a href="/results/{{ run.id }}" class="btn btn-outline-secondary">📋 View Details</a>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
